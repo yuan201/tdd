@@ -1,3 +1,5 @@
+from unittest import skip
+
 from django.core.urlresolvers import resolve
 from django.test import TestCase
 from django.http import HttpRequest
@@ -8,8 +10,11 @@ from django.utils.html import escape
 
 from lists.views import home_page
 from lists.models import Item, List
+from lists.forms import ItemForm
+
 
 class homePageTest(TestCase):
+    maxDiff = None
 
     def setUp(self):
         pass
@@ -21,6 +26,20 @@ class homePageTest(TestCase):
     def test_home_page_use_proper_template(self):
         with self.assertTemplateUsed('home.html'):
             response = self.client.get('/')
+
+    def test_home_page_uses_item_form(self):
+        response = self.client.get('/')
+        self.assertIsInstance(response.context['form'], ItemForm)
+
+    # the following test will fail because render_to_string doesn't handle
+    # csrf_token correctly. It's from the TDD book based on a previous version
+    # of django. But I haven't tested it on the older version.
+    @skip
+    def test_home_page_returns_correct_html(self):
+        request = HttpRequest()
+        response = home_page(request)
+        expected_html = render_to_string('home.html', {'form': ItemForm()})
+        self.assertMultiLineEqual(response.content.decode(), expected_html)
 
 
 class ListViewTest(TestCase):
